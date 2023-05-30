@@ -4,7 +4,7 @@
 
 
 ### Model Used
-Custom CNN (500KB once converted to tf)
+Custom CNN (500KB once converted to tf)<br>
 https://www.kaggle.com/sameen53/card-classifier-tf-reddot
 
 ### Dataset
