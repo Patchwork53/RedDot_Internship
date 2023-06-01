@@ -3,14 +3,14 @@ package com.shaj.birddetector
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.AssetManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
-import android.media.Image
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
@@ -20,16 +20,23 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.NonNull
+import androidx.annotation.Nullable
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.googlecode.tesseract.android.TessBaseAPI
 import com.shaj.birddetector.databinding.ActivityMainBinding
-import org.tensorflow.lite.support.image.TensorImage
-import java.io.IOException
 import com.shaj.birddetector.ml.CIFAR
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.common.ops.NormalizeOp
 import org.tensorflow.lite.support.image.ImageProcessor
+import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.lang.RuntimeException
 
 
 class MainActivity : AppCompatActivity() {
@@ -49,6 +56,8 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
+
+        Assets.extractAssets(this)
 
         imageView = binding.imageView
         button = binding.bntCaptureImage
@@ -163,6 +172,8 @@ class MainActivity : AppCompatActivity() {
         birdsmodel.close()
         */
 
+        //GITHUB PUSH 1
+        /*
         var tfimage = TensorImage(DataType.FLOAT32)
         tfimage.load(bitmap)
 
@@ -197,6 +208,39 @@ class MainActivity : AppCompatActivity() {
 
 // Releases model resources if no longer used.
         model.close()
+        */
+
+
+        //GITHUB PUSH 2
+
+
+
+        var tess = TessBaseAPI()
+
+
+        var dataPath = this.filesDir.absolutePath
+
+
+        outputTextView.text=dataPath
+
+        if (!tess.init(dataPath, "eng")) {
+            // Error initializing Tesseract (wrong/inaccessible data path or not existing language file)
+            tess.recycle()
+            outputTextView.text="Error loading Eng"
+            return
+        }
+        if (!tess.init(dataPath, "ben")) {
+            // Error initializing Tesseract (wrong/inaccessible data path or not existing language file)
+            tess.recycle()
+            outputTextView.text="Error loading Ben"
+            return
+        }
+
+        outputTextView.text="Pass 1"
+        tess.setImage(bitmap)
+        var text = tess.utF8Text
+        outputTextView.text=text
+        tess.recycle()
 
 
     }
@@ -244,5 +288,91 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return null
+    }
+}
+
+
+object Config {
+    const val TESS_ENGINE = TessBaseAPI.OEM_LSTM_ONLY
+    const val TESS_LANG = "eng"
+    const val IMAGE_NAME = "sample.jpg"
+}
+
+object Assets {
+    /**
+     * Returns locally accessible directory where our assets are extracted.
+     */
+
+    fun getLocalDir(context: Context): File {
+        return context.filesDir
+    }
+
+    /**
+     * Returns locally accessible directory path which contains the "tessdata" subdirectory
+     * with *.traineddata files.
+     */
+
+    fun getTessDataPath( context: Context): String {
+        return getLocalDir(context).absolutePath
+    }
+
+
+    fun getImageFile( context: Context): File {
+        return File(getLocalDir(context), Config.IMAGE_NAME)
+    }
+
+    fun getImageBitmap( context: Context): Bitmap {
+        return BitmapFactory.decodeFile(getImageFile(context).absolutePath)
+    }
+
+    fun extractAssets( context: Context) {
+        val am = context.assets
+        val localDir = getLocalDir(context)
+        if (!localDir.exists() && !localDir.mkdir()) {
+            throw RuntimeException("Can't create directory $localDir")
+        }
+        val tessDir = File(getTessDataPath(context), "tessdata")
+        if (!tessDir.exists() && !tessDir.mkdir()) {
+            throw RuntimeException("Can't create directory $tessDir")
+        }
+
+        // Extract all assets to our local directory.
+        // All *.traineddata into "tessdata" subdirectory, other files into root.
+        try {
+            for (assetName in am.list("")!!) {
+
+                Log.i("my files", assetName)
+
+                val targetFile: File = if (assetName.endsWith(".traineddata")) {
+                    File(tessDir, assetName)
+                } else {
+                    File(localDir, assetName)
+                }
+                if (!targetFile.exists()) {
+                    copyFile(am, assetName, targetFile)
+                }
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun copyFile(
+        am: AssetManager,  assetName: String,
+        outFile: File
+    ) {
+        try {
+            am.open(assetName).use { `in` ->
+                FileOutputStream(outFile).use { out ->
+                    val buffer = ByteArray(1024)
+                    var read: Int
+                    while (`in`.read(buffer).also { read = it } != -1) {
+                        out.write(buffer, 0, read)
+                    }
+                }
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
     }
 }
