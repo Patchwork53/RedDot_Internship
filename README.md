@@ -44,3 +44,21 @@ outputGenerator(){
 ...
 //Commit 2 - Tesseract OCR
 ```
+---
+### Commit 3
+### Task: Segmenting Images and Extracting Key Value Pairs
+
+![image](https://github.com/PatchworkProgrammer/RedDot_Intership_P1/assets/83033987/5f72eef6-1648-4902-9fa1-4e9f2d2f2a53)
+
+<ul>
+  <li> two TesseractAPI (en and bn) </li>
+  <li> segmenting images based on ratios </li>
+</ul>
+
+### Next Up
+<ul>
+  <li> preprocessing images for alignment (openCV for android?)</li>
+  <li> Fake ID check </li>
+  <li> New NID check </li>
+  <li> Liveliness check </li>
+</ul>
