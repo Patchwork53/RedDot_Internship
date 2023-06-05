@@ -213,7 +213,7 @@ class MainActivity : AppCompatActivity() {
 
         //GITHUB PUSH 2
 
-
+        /*
 
         var tess = TessBaseAPI()
 
@@ -241,6 +241,72 @@ class MainActivity : AppCompatActivity() {
         var text = tess.utF8Text
         outputTextView.text=text
         tess.recycle()
+
+
+         */
+
+
+        //GITHUB PUSH 3
+
+        var tess_ben = TessBaseAPI()
+        var tess_eng = TessBaseAPI()
+
+
+        var dataPath = this.filesDir.absolutePath
+
+
+        outputTextView.text=dataPath
+
+        if (!tess_eng.init(dataPath, "eng")) {
+            // Error initializing Tesseract (wrong/inaccessible data path or not existing language file)
+            tess_eng.recycle()
+            outputTextView.text="Error loading Eng"
+            return
+        }
+        if (!tess_ben.init(dataPath, "ben")) {
+            // Error initializing Tesseract (wrong/inaccessible data path or not existing language file)
+            tess_ben.recycle()
+            outputTextView.text="Error loading Ben"
+            return
+        }
+
+        //crop bitmap
+        val height = bitmap.height
+        val width = bitmap.width
+
+        val data_left = ((270.0/1030.0)*width).toInt()
+        val data_right = ((860.0/1030.0)*width).toInt()
+        val data_top = ((220.0/630.0)*height).toInt()
+        val data_height = ((65.0/630.0)*height).toInt()
+        val data_width = (data_right-data_left).toInt()
+
+
+        //for loop
+        var i = 0
+        var text = ""
+        while (i<6){
+
+            //if i 0,2,3 then ben else eng
+            var croppedBitmap = Bitmap.createBitmap(bitmap, data_left, data_top+(i*data_height), data_width, data_height)
+            if (i==0 || i==2 || i==3){
+                tess_ben.setImage(croppedBitmap)
+                text += tess_ben.utF8Text
+            }else{
+                tess_eng.setImage(croppedBitmap)
+                text += tess_eng.utF8Text
+            }
+
+            Log.i("TAG", "outputGenerator: $i")
+            text += "\n"
+            i++
+        }
+
+
+        outputTextView.text=text
+        tess_ben.recycle()
+        tess_eng.recycle()
+
+
 
 
     }
